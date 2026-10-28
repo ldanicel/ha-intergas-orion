@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
 - New sensors for heat pumps (for example the hybrid HCU Xtend): electricity
   consumption and heat output (running totals in kWh, Energy dashboard
