@@ -9,7 +9,7 @@ from yarl import URL
 
 from custom_components.intergas_orion.const import DOMAIN
 
-from .conftest import AID, API, HEATER, HID, mock_cloud
+from .conftest import AID, API, HEAT_PUMP_STATISTICS, HEATER, HID, mock_cloud
 
 CREDS = {CONF_EMAIL: "user@example.com", CONF_PASSWORD: "secret"}
 
@@ -184,6 +184,32 @@ async def test_sensors_and_binary_sensors(hass: HomeAssistant, api) -> None:
     assert hass.states.get(_entity(hass, "binary_sensor", "burner")).state == "on"
     # last_seen long ago: the gateway counts as offline.
     assert hass.states.get(_entity(hass, "binary_sensor", "online")).state == "off"
+
+
+async def test_heat_pump_energy_sensors(hass: HomeAssistant, api) -> None:
+    mock_cloud(api, statistics=HEAT_PUMP_STATISTICS)
+    await _setup(hass)
+    expected = {
+        "heat_pump_electricity_consumption": ("63", "kWh", "total_increasing"),
+        "heat_pump_heat_output": ("532", "kWh", "total_increasing"),
+        "heat_pump_electricity_consumption_yesterday": ("6.8", "kWh", None),
+        "heat_pump_heat_output_yesterday": ("52.8", "kWh", None),
+        "heat_pump_cop_yesterday": ("7.7", None, "measurement"),
+        "heat_pump_hours": ("175", "h", "total_increasing"),
+    }
+    for suffix, (value, unit, state_class) in expected.items():
+        state = hass.states.get(_entity(hass, "sensor", suffix))
+        assert state.state == value, suffix
+        assert state.attributes.get("unit_of_measurement") == unit, suffix
+        assert state.attributes.get("state_class") == state_class, suffix
+    # Null gas values on a heat pump create no gas sensors.
+    assert not [s for s in hass.states.async_all("sensor") if s.entity_id.endswith("gas_consumption")]
+
+
+async def test_gas_boiler_has_no_heat_pump_sensors(hass: HomeAssistant, api) -> None:
+    mock_cloud(api)
+    await _setup(hass)
+    assert not [s for s in hass.states.async_all("sensor") if "heat_pump" in s.entity_id]
 
 
 async def test_optional_endpoints_missing(hass: HomeAssistant, api) -> None:

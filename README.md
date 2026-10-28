@@ -47,6 +47,7 @@ Comfort Touch thermostat, single zone.
 | Next schedule change (climate attributes) | ✅ |
 | Adaptive schedule switch | ✅ |
 | Gas consumption (heating / hot water / total), burner hours | ✅ |
+| Heat pump electricity use and heat output (total and yesterday), COP, hours | ✅ (hybrid HCU Xtend) |
 | Water pressure, outdoor temperature, burner, online, operating mode | ✅ |
 | Redacted diagnostics download | ✅ |
 | Editing the week schedule's time slots | ❌ not yet (use the app) |
@@ -101,6 +102,13 @@ and password.
     the Energy dashboard. The API does not state the unit; m³ matches the
     values the app shows.
   - Heating and hot water burner hours, power-on hours.
+  - Heat pump (hybrid systems such as the HCU Xtend): electricity
+    consumption and heat output as running totals in kWh (the electricity
+    total can be added to the Energy dashboard as an individual device),
+    yesterday's electricity consumption, heat output and COP, and heat pump
+    hours. The cloud reports the running totals in whole kWh and no live
+    power (kW). For today's consumption so far, add a **Utility meter**
+    helper with a daily cycle on the electricity consumption sensor.
   - Water pressure, central heating temperature, outdoor temperature (the
     cloud's weather for your location).
   - Operating mode (off / manual / week schedule / holiday / error), lockout code,

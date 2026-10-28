@@ -14,6 +14,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     SIGNAL_STRENGTH_DECIBELS,
+    UnitOfEnergy,
     UnitOfPressure,
     UnitOfTemperature,
     UnitOfTime,
@@ -124,6 +125,55 @@ SENSORS: tuple[IntergasSensorDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.TOTAL_INCREASING,
         value_fn=_stat("dhw_gas_operational_hours"),
+    ),
+    # Heat pump (for example the hybrid HCU Xtend): electricity used and heat
+    # delivered for central heating, as running totals and for yesterday.
+    IntergasSensorDescription(
+        key="ch_electricity_consumption",
+        translation_key="ch_electricity_consumption",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=_stat("ch_electricity_consumption"),
+    ),
+    IntergasSensorDescription(
+        key="ch_thermal_energy",
+        translation_key="ch_thermal_energy",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=_stat("ch_thermal_energy"),
+    ),
+    # The "yesterday" values are complete daily totals that change once a day,
+    # so they get no state class (the energy device class allows no other).
+    IntergasSensorDescription(
+        key="ch_electric_energy_consumption_yesterday",
+        translation_key="ch_electric_energy_consumption_yesterday",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        value_fn=_stat("ch_electric_energy_consumption_yesterday"),
+    ),
+    IntergasSensorDescription(
+        key="ch_thermal_energy_yesterday",
+        translation_key="ch_thermal_energy_yesterday",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        value_fn=_stat("ch_thermal_energy_yesterday"),
+    ),
+    IntergasSensorDescription(
+        key="ch_cop_yesterday",
+        translation_key="ch_cop_yesterday",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=_stat("ch_cop_yesterday"),
+    ),
+    IntergasSensorDescription(
+        key="ch_electric_operational_hours",
+        translation_key="ch_electric_operational_hours",
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=_stat("ch_electric_operational_hours"),
     ),
     IntergasSensorDescription(
         key="device_poweron_hours",

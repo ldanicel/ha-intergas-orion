@@ -17,6 +17,14 @@ HEATER = {
 ZONE = {"zone_number": 1, "name": "Zone A", "temperature_room": 19.8, "temperature_heater_setpoint": 20.0}
 STATISTICS = {"ch_gas_consumption": 2.5, "dhw_gas_consumption": 80.25, "ch_gas_operational_hours": 2,
               "dhw_gas_operational_hours": 35, "device_poweron_hours": 2584, "ch_water_pressure": 1.57}
+# Reported by a hybrid heat pump (HCU Xtend); the gas fields are null there.
+HEAT_PUMP_STATISTICS = {
+    "heater_id": HID, "heating_water_pressure": 1.77, "heating_hours": None, "hot_water_hours": None,
+    "heating_gas_consumption": None, "hot_water_gas_consumption": None, "ch_water_pressure": 1.77,
+    "device_poweron_hours": 1368, "ch_gas_operational_hours": None, "ch_electricity_consumption": 63,
+    "ch_electric_operational_hours": 175, "ch_thermal_energy": 532, "dhw_gas_operational_hours": 4,
+    "ch_electric_energy_consumption_yesterday": 6.8, "ch_thermal_energy_yesterday": 52.8, "ch_cop_yesterday": 7.7,
+}
 WEATHER = {"conditions": "BROKEN_CLOUDS", "nighttime": False, "temperature": 16.9}
 PRESETS = [
     {"name": "DEFAULT_STANDBY", "temperature": 17.5, "color": "COLOR_STANDBY", "type": "STANDBY", "preset_id": "p-away"},
@@ -51,14 +59,14 @@ def api():
         yield mock
 
 
-def mock_cloud(mock, *, jwt="jwt-1", repeat=True, heater=None, extras=True, parameters=None):
+def mock_cloud(mock, *, jwt="jwt-1", repeat=True, heater=None, extras=True, parameters=None, statistics=None):
     mock.post(f"{API}/v1/accounts/platform_check", payload={"platform": "ARCH_2_0"}, repeat=repeat)
     mock.post(f"{API}/v1/accounts/authenticate", payload={"jwt": jwt, "account_id": AID}, repeat=repeat)
     base = f"{API}/v1/accounts/{AID}/heaters/{HID}"
     mock.get(f"{API}/v1/accounts/{AID}/heaters", payload=[heater or HEATER], repeat=repeat)
     mock.get(f"{base}/zones", payload=[ZONE], repeat=repeat)
     if extras:
-        mock.get(f"{base}/statistics", payload=STATISTICS, repeat=repeat)
+        mock.get(f"{base}/statistics", payload=STATISTICS if statistics is None else statistics, repeat=repeat)
         mock.get(f"{base}/weather", payload=WEATHER, repeat=repeat)
         mock.get(f"{base}/presets", payload=PRESETS, repeat=repeat)
         mock.get(f"{base}/zones/1/scheme/week", payload=SCHEME, repeat=repeat)

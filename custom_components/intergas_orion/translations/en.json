@@ -58,6 +58,24 @@
       "dhw_gas_operational_hours": {
         "name": "Hot water burner hours"
       },
+      "ch_electricity_consumption": {
+        "name": "Heat pump electricity consumption"
+      },
+      "ch_thermal_energy": {
+        "name": "Heat pump heat output"
+      },
+      "ch_electric_energy_consumption_yesterday": {
+        "name": "Heat pump electricity consumption yesterday"
+      },
+      "ch_thermal_energy_yesterday": {
+        "name": "Heat pump heat output yesterday"
+      },
+      "ch_cop_yesterday": {
+        "name": "Heat pump COP yesterday"
+      },
+      "ch_electric_operational_hours": {
+        "name": "Heat pump hours"
+      },
       "device_poweron_hours": {
         "name": "Power-on hours"
       },

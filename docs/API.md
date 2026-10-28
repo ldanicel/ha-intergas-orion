@@ -147,6 +147,27 @@ GET /v1/accounts/{aid}/heaters/{hid}/weather
 The gas values are running totals (m³ as far as can be told; the API does not
 say). `dhw-buffer-tank` answers 404 on boilers without a buffer tank.
 
+Which statistics fields are filled in depends on the appliance. A hybrid heat
+pump (`hardware.type` `HCU Xtend`) reports its gas fields as `null` and adds:
+
+| Field | Meaning |
+|---|---|
+| `ch_electricity_consumption` | electricity used for heating, running total (kWh, whole numbers) |
+| `ch_thermal_energy` | heat delivered, running total (kWh, whole numbers) |
+| `ch_electric_energy_consumption_yesterday` | electricity used yesterday (kWh) |
+| `ch_thermal_energy_yesterday` | heat delivered yesterday (kWh) |
+| `ch_cop_yesterday` | yesterday's COP (heat delivered / electricity used) |
+| `ch_electric_operational_hours` | heat pump running hours |
+| `heating_water_pressure` | same value as `ch_water_pressure` |
+
+It also lists `heating_hours`, `hot_water_hours`, `heating_gas_consumption`
+and `hot_water_gas_consumption` (all `null` on that model). No field gives the
+current electrical power (kW), and no endpoint has been found that does.
+
+Any path ending in `/metrics` is refused by the API's proxy ("403 Forbidden,
+Request forbidden by administrative rules", an HTML body) before it reaches
+the API, so it is not an app endpoint.
+
 ## Help wanted
 
 Captures from multi-zone installations, other boiler models, and the requests

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- New sensors for heat pumps (for example the hybrid HCU Xtend): electricity
+  consumption and heat output (running totals in kWh, Energy dashboard
+  ready), yesterday's electricity consumption, heat output and COP, and heat
+  pump hours. Created only when the cloud reports them.
+- `tools/orion_probe.py` also prints statistics and weather, shows error
+  bodies, waits when rate limited, has an `--energy-only` flag and no longer
+  stops when `platform_check` answers `ARCH_1_0` (it does so for unknown
+  email addresses too).
+
 ## 0.4.0
 
 - The climate entity has an `off` mode that turns the boiler off, the same as
