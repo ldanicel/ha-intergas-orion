@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- When the cloud rejects a token right after a successful login, the
+  integration now retries on the next poll instead of asking for a new
+  login and stopping updates until it is reloaded.
+
 ## 0.5.0
 
 - New sensors for heat pumps (for example the hybrid HCU Xtend): electricity

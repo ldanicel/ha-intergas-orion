@@ -129,6 +129,26 @@ async def test_token_expiry_reauths(hass: HomeAssistant, api) -> None:
     assert [c.kwargs["headers"]["Authorization"] for c in calls] == ["Bearer old", "Bearer new"]
 
 
+async def test_rejected_fresh_token_is_transient(hass: HomeAssistant, api) -> None:
+    """A 401 right after a successful login is a cloud fault, not bad credentials."""
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+    from custom_components.intergas_orion.api import (
+        IntergasApiError,
+        IntergasOrionClient,
+    )
+
+    api.post(f"{API}/v1/accounts/authenticate", payload={"jwt": "a", "account_id": AID}, repeat=True)
+    heaters = f"{API}/v1/accounts/{AID}/heaters"
+    api.get(heaters, status=401)
+    api.get(heaters, status=401)
+    api.get(heaters, payload=[{"heater_id": HID}])
+    client = IntergasOrionClient(async_get_clientsession(hass), "u@example.com", "pw")
+    with pytest.raises(IntergasApiError):
+        await client.get_heaters()
+    assert await client.get_heaters() == [{"heater_id": HID}]
+
+
 async def test_bad_password_starts_reauth(hass: HomeAssistant, api) -> None:
     api.post(f"{API}/v1/accounts/authenticate", status=401, repeat=True)
     entry = MockConfigEntry(domain=DOMAIN, data=CREDS, unique_id=AID)
