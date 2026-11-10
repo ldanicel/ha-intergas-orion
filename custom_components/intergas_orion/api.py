@@ -171,7 +171,12 @@ class IntergasOrionClient:
                 headers={"Authorization": f"Bearer {self._jwt}"},
             )
         if status in (401, 403):
-            raise IntergasAuthError(
+            # The login itself just succeeded, so the credentials are fine: the
+            # cloud rejected its own fresh token (seen during a server-side key
+            # rotation). Drop the token and let the next poll retry instead of
+            # starting a reauth flow, which would stop polling for good.
+            self._jwt = None
+            raise IntergasApiError(
                 f"{method} {redact_path(path)}: HTTP {status} after re-auth"
             )
         if status >= 400:
