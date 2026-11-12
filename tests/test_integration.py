@@ -243,7 +243,11 @@ async def test_optional_endpoints_missing(hass: HomeAssistant, api) -> None:
     assert not hass.states.async_all("switch")
 
 
-async def test_set_hvac_mode_auto(hass: HomeAssistant, api) -> None:
+async def test_set_hvac_mode_auto(hass: HomeAssistant, api, freezer) -> None:
+    from homeassistant.util import dt as dt_util
+
+    # 12:00: the 07:00 "Home" step (20.0) is active, which matches the setpoint.
+    freezer.move_to(dt_util.as_utc(dt_util.now().replace(hour=12, minute=0)))
     mock_cloud(api)
     api.patch(SCHEME_URL, status=202, body=b"")
     await _setup(hass)
@@ -253,7 +257,34 @@ async def test_set_hvac_mode_auto(hass: HomeAssistant, api) -> None:
     )
     calls = api.requests[("PATCH", URL(SCHEME_URL))]
     assert calls[0].kwargs["json"] == {"schedule_enabled": True}
-    assert hass.states.get(entity_id).state == "auto"
+    assert ("PATCH", URL(ZONE_URL)) not in api.requests
+    state = hass.states.get(entity_id)
+    assert state.state == "auto"
+    assert state.attributes["current_schedule_preset"] == "Home"
+    assert state.attributes["current_schedule_temperature"] == 20.0
+
+
+async def test_set_hvac_mode_auto_applies_schedule_step(hass: HomeAssistant, api, freezer) -> None:
+    """Turning the schedule on replaces a manual setpoint with the active step's."""
+    from homeassistant.util import dt as dt_util
+
+    # 23:00: the 22:30 "Standby" step (17.5) is active; the setpoint is 20.0.
+    freezer.move_to(dt_util.as_utc(dt_util.now().replace(hour=23, minute=0)))
+    mock_cloud(api)
+    api.patch(SCHEME_URL, status=202, body=b"")
+    api.patch(ZONE_URL, status=202, body=b"")
+    await _setup(hass)
+    entity_id = hass.states.async_all("climate")[0].entity_id
+    await hass.services.async_call(
+        "climate", "set_hvac_mode", {"entity_id": entity_id, "hvac_mode": "auto"}, blocking=True
+    )
+    assert api.requests[("PATCH", URL(SCHEME_URL))][0].kwargs["json"] == {"schedule_enabled": True}
+    calls = api.requests[("PATCH", URL(ZONE_URL))]
+    assert calls[0].kwargs["json"] == {"temperature_heater_setpoint": 17.5}
+    state = hass.states.get(entity_id)
+    assert state.state == "auto"
+    assert state.attributes["temperature"] == 17.5
+    assert state.attributes["preset_mode"] == "Standby"
 
 
 async def test_presets(hass: HomeAssistant, api) -> None:
