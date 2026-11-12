@@ -91,8 +91,10 @@ and password.
     turns it back on. Only offered when the boiler reports that setting.
   - Presets are the ones defined in the app. Selecting one sets the zone to
     the preset's temperature. In `auto` mode the active preset is the one the
-    schedule is currently on.
+    schedule is currently on. Switching to `auto` also sets the temperature
+    of the active schedule step, clearing a manual setpoint left from `heat`.
   - Attributes: `schedule_enabled`, `adaptive_schedule_enabled`,
+    `current_schedule_preset`, `current_schedule_temperature`,
     `next_schedule_change`, `next_schedule_preset`, `next_schedule_temperature`.
 - **Maximum supply temperature** (number, configuration): the boiler's
   maximum central-heating flow temperature (P050), from the boiler's own

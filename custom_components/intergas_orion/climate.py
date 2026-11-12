@@ -103,6 +103,11 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
     def _preset_by_id(self, preset_id: str | None) -> dict | None:
         return next((p for p in self._presets if p.get("preset_id") == preset_id), None)
 
+    def _current_schedule_preset(self) -> dict | None:
+        """Preset of the week schedule step that is active right now."""
+        current, _, _ = schedule_points(self._scheme, dt_util.now())
+        return self._preset_by_id(current and current.get("linked_preset_id"))
+
     @property
     def name(self) -> str | None:
         return self._zone.get("name") or f"Zone {self._zone_number}"
@@ -184,8 +189,7 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
     @property
     def preset_mode(self) -> str | None:
         if self.hvac_mode == HVACMode.AUTO:
-            current, _, _ = schedule_points(self._scheme, dt_util.now())
-            preset = self._preset_by_id(current and current.get("linked_preset_id"))
+            preset = self._current_schedule_preset()
             # During a temporary override the setpoint differs from the preset.
             if preset and preset.get("temperature") == self.target_temperature:
                 return preset_label(preset)
@@ -204,6 +208,10 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
             "schedule_enabled": scheme.get("schedule_enabled"),
             "adaptive_schedule_enabled": scheme.get("adaptive_schedule_enabled"),
         }
+        current = self._current_schedule_preset()
+        if current is not None:
+            attrs["current_schedule_preset"] = preset_label(current)
+            attrs["current_schedule_temperature"] = current.get("temperature")
         _, next_start, next_item = schedule_points(scheme, dt_util.now())
         if next_start is not None:
             preset = self._preset_by_id(next_item.get("linked_preset_id"))
@@ -261,6 +269,8 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
                     self._zone_number,
                     schedule_enabled=hvac_mode == HVACMode.AUTO,
                 )
+                if hvac_mode == HVACMode.AUTO:
+                    await self._resume_schedule_temperature()
         except IntergasApiError as err:
             raise HomeAssistantError(f"Changing the mode failed: {err}") from err
         self._pending_mode = hvac_mode
@@ -268,6 +278,23 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
         self.coordinator.schedule_slow_refresh()
         self.async_write_ha_state()
         self._confirm_later()
+
+    async def _resume_schedule_temperature(self) -> None:
+        """Apply the active schedule step's temperature.
+
+        Turning the schedule on keeps the last manual setpoint as a temporary
+        override until the next schedule step, so a setpoint from heat mode
+        would otherwise stay in place for hours.
+        """
+        preset = self._current_schedule_preset()
+        temperature = preset and preset.get("temperature")
+        if temperature is None or temperature == self.target_temperature:
+            return
+        await self.coordinator.client.set_zone_temperature(
+            self._heater_id, self._zone_number, temperature
+        )
+        self._pending_target = round(float(temperature), 1)
+        self._pending_target_until = monotonic() + PENDING_TIMEOUT
 
     async def async_turn_off(self) -> None:
         await self.async_set_hvac_mode(HVACMode.OFF)

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.2
+
+- Switching a zone to auto (week schedule) now also sets the temperature of
+  the schedule step that is active right now. The thermostat keeps the last
+  manual setpoint as a temporary override until the next schedule step, so
+  before this a setpoint from heat mode could stay in place for hours.
+- New climate attributes `current_schedule_preset` and
+  `current_schedule_temperature`.
+
 ## 0.5.1
 
 - When the cloud rejects a token right after a successful login, the
