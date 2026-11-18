@@ -446,3 +446,50 @@ async def test_diagnostics_are_redacted(hass: HomeAssistant, api) -> None:
     text = json.dumps(diag)
     for secret in (AID, HID, "SN-TEST", "user@example.com", "secret", "Zone A", "p-home"):
         assert secret not in text, secret
+
+
+async def test_wifi_heater_null_subobjects(hass: HomeAssistant, api) -> None:
+    """Wi-Fi heaters report radio_frequency_performance (and other blocks) as null."""
+    heater = {**HEATER, "radio_frequency_performance": None, "state": None, "hardware": None}
+    mock_cloud(api, heater=heater, statistics=HEAT_PUMP_STATISTICS)
+    await _setup(hass)
+    sensors = [s.entity_id for s in hass.states.async_all("sensor")]
+    assert any("heat_pump_cop_yesterday" in e for e in sensors)
+    assert not [e for e in sensors if e.endswith("_rssi")]
+    assert hass.states.async_all("climate")
+
+
+@pytest.mark.parametrize("key", ["state", "hardware", "radio_frequency_performance", "name", "number_of_zones"])
+async def test_null_heater_fields(hass: HomeAssistant, api, key, caplog) -> None:
+    """Any heater block reported as null must not break setup."""
+    mock_cloud(api, heater={**HEATER, key: None})
+    await _setup(hass)
+    assert hass.states.async_all("climate")
+    assert hass.states.async_all("sensor")
+    assert "Error while setting up" not in caplog.text
+    assert "Error adding entit" not in caplog.text
+
+
+async def test_null_endpoint_payloads(hass: HomeAssistant, api, caplog) -> None:
+    """Optional endpoints answering a JSON null are treated as missing."""
+    base = f"{API}/v1/accounts/{AID}/heaters/{HID}"
+    for path in ("statistics", "weather", "presets", "zones/1/scheme/week", "parameters"):
+        api.get(f"{base}/{path}", body="null", content_type="application/json", repeat=True)
+    mock_cloud(api, extras=False)
+    await _setup(hass)
+    assert hass.states.async_all("climate")
+    assert "Error while setting up" not in caplog.text
+    assert "Unexpected error" not in caplog.text
+
+
+async def test_heat_pump_without_room_temperature(hass: HomeAssistant, api, caplog) -> None:
+    """Heat pump indoor units report no room temperature or setpoint."""
+    from .conftest import ZONE
+
+    api.get(f"{API}/v1/accounts/{AID}/heaters/{HID}/zones",
+            payload=[{**ZONE, "temperature_room": None, "temperature_heater_setpoint": None}], repeat=True)
+    mock_cloud(api, heater={**HEATER, "radio_frequency_performance": None}, statistics=HEAT_PUMP_STATISTICS)
+    await _setup(hass)
+    state = hass.states.async_all("climate")[0]
+    assert state.attributes.get("current_temperature") is None
+    assert "Error" not in caplog.text

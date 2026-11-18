@@ -43,7 +43,7 @@ class IntergasBurner(IntergasEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._heater.get("state", {}).get("is_heating")
+        return (self._heater.get("state") or {}).get("is_heating")
 
 
 class IntergasOnline(IntergasEntity, BinarySensorEntity):

@@ -25,7 +25,7 @@ async def async_setup_entry(
     async_add_entities(
         IntergasAdaptiveSchedule(coordinator, hid, n)
         for hid, bundle in coordinator.data.items()
-        for n, scheme in bundle.get("schemes", {}).items()
+        for n, scheme in (bundle.get("schemes") or {}).items()
         if "adaptive_schedule_enabled" in scheme
     )
 
@@ -46,7 +46,7 @@ class IntergasAdaptiveSchedule(IntergasEntity, SwitchEntity):
     @property
     def is_on(self) -> bool | None:
         reported = (
-            self._bundle.get("schemes", {})
+            (self._bundle.get("schemes") or {})
             .get(self._zone_number, {})
             .get("adaptive_schedule_enabled")
         )
