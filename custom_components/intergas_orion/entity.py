@@ -27,11 +27,11 @@ class IntergasEntity(CoordinatorEntity[IntergasCoordinator]):
 
     @property
     def _heater(self) -> dict:
-        return self._bundle.get("heater", {})
+        return self._bundle.get("heater") or {}
 
     @property
     def device_info(self) -> DeviceInfo:
-        hw = self._heater.get("hardware", {})
+        hw = self._heater.get("hardware") or {}
         return DeviceInfo(
             identifiers={(DOMAIN, self._heater_id)},
             manufacturer="Intergas",

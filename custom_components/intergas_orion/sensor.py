@@ -39,15 +39,15 @@ MODES = [
 
 
 def _heater(b: dict) -> dict:
-    return b.get("heater", {})
+    return b.get("heater") or {}
 
 
 def _stat(key: str) -> Callable[[dict], float | int | None]:
-    return lambda b: b.get("statistics", {}).get(key)
+    return lambda b: (b.get("statistics") or {}).get(key)
 
 
 def _total_gas(b: dict) -> float | None:
-    stats = b.get("statistics", {})
+    stats = b.get("statistics") or {}
     ch, dhw = stats.get("ch_gas_consumption"), stats.get("dhw_gas_consumption")
     if ch is None and dhw is None:
         return None
@@ -55,7 +55,7 @@ def _total_gas(b: dict) -> float | None:
 
 
 def _pressure(b: dict) -> float | None:
-    stats = b.get("statistics", {})
+    stats = b.get("statistics") or {}
     for value in (
         stats.get("ch_water_pressure"),
         stats.get("heating_water_pressure"),
@@ -67,7 +67,7 @@ def _pressure(b: dict) -> float | None:
 
 
 def _mode(b: dict) -> str | None:
-    mode = _heater(b).get("state", {}).get("mode")
+    mode = (_heater(b).get("state") or {}).get("mode")
     if not isinstance(mode, str):
         return None
     return mode.lower() if mode.lower() in MODES else "unknown"
@@ -206,7 +206,7 @@ SENSORS: tuple[IntergasSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda b: b.get("weather", {}).get("temperature"),
+        value_fn=lambda b: (b.get("weather") or {}).get("temperature"),
     ),
     IntergasSensorDescription(
         key="mode",
@@ -230,7 +230,7 @@ SENSORS: tuple[IntergasSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
-        value_fn=lambda b: _heater(b).get("radio_frequency_performance", {}).get("heater_rssi"),
+        value_fn=lambda b: (_heater(b).get("radio_frequency_performance") or {}).get("heater_rssi"),
     ),
     IntergasSensorDescription(
         key="gateway_rssi",
@@ -240,13 +240,13 @@ SENSORS: tuple[IntergasSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
-        value_fn=lambda b: _heater(b).get("radio_frequency_performance", {}).get("gateway_rssi"),
+        value_fn=lambda b: (_heater(b).get("radio_frequency_performance") or {}).get("gateway_rssi"),
     ),
     IntergasSensorDescription(
         key="lockout_code",
         translation_key="lockout_code",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda b: _heater(b).get("state", {}).get("current_lockout_code"),
+        value_fn=lambda b: (_heater(b).get("state") or {}).get("current_lockout_code"),
     ),
 )
 

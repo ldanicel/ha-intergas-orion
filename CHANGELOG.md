@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3
+
+- Heaters on Wi-Fi (for example the Xtend Eco HP) report
+  `radio_frequency_performance` as null, which stopped the sensor platform
+  from loading. Null blocks (state, hardware, statistics, weather, schemes,
+  parameters) are now treated as empty everywhere (#3).
 ## 0.5.2
 
 - Switching a zone to auto (week schedule) now also sets the temperature of

@@ -87,14 +87,14 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
     # --- data accessors ---------------------------------------------------
     @property
     def _zone(self) -> dict:
-        for z in self._bundle.get("zones", []):
-            if z["zone_number"] == self._zone_number:
+        for z in self._bundle.get("zones") or []:
+            if z.get("zone_number") == self._zone_number:
                 return z
         return {}
 
     @property
     def _scheme(self) -> dict:
-        return self._bundle.get("schemes", {}).get(self._zone_number, {})
+        return (self._bundle.get("schemes") or {}).get(self._zone_number) or {}
 
     @property
     def _presets(self) -> list[dict]:
@@ -119,7 +119,7 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
     @property
     def _power_param(self) -> dict:
         """The boiler's on/off parameter, if this boiler exposes it."""
-        return self._bundle.get("parameters", {}).get(PARAM_OPERATIONAL_STATE, {})
+        return (self._bundle.get("parameters") or {}).get(PARAM_OPERATIONAL_STATE) or {}
 
     @property
     def supported_features(self) -> ClimateEntityFeature:
@@ -146,7 +146,7 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
 
     @property
     def _reported_mode(self) -> HVACMode:
-        mode = self._heater.get("state", {}).get("mode")
+        mode = (self._heater.get("state") or {}).get("mode")
         if mode == MODE_OFF or self._power_param.get("value") == 0:
             return HVACMode.OFF
         if mode in (MODE_WEEK, MODE_HOLIDAY):
@@ -178,7 +178,7 @@ class IntergasZoneClimate(IntergasEntity, ClimateEntity):
     def hvac_action(self) -> HVACAction:
         if self._reported_mode == HVACMode.OFF:
             return HVACAction.OFF
-        if self._heater.get("state", {}).get("is_heating"):
+        if (self._heater.get("state") or {}).get("is_heating"):
             return HVACAction.HEATING
         return HVACAction.IDLE
 

@@ -33,7 +33,7 @@ async def async_setup_entry(
     entities += [
         IntergasMaxSupplyTemperature(coordinator, hid)
         for hid, bundle in coordinator.data.items()
-        if PARAM_MAX_SUPPLY_TEMPERATURE in bundle.get("parameters", {})
+        if PARAM_MAX_SUPPLY_TEMPERATURE in (bundle.get("parameters") or {})
     ]
     async_add_entities(entities)
 
@@ -117,7 +117,7 @@ class IntergasMaxSupplyTemperature(IntergasEntity, NumberEntity):
 
     @property
     def _param(self) -> dict:
-        return self._bundle.get("parameters", {}).get(PARAM_MAX_SUPPLY_TEMPERATURE, {})
+        return (self._bundle.get("parameters") or {}).get(PARAM_MAX_SUPPLY_TEMPERATURE) or {}
 
     @property
     def available(self) -> bool:
